@@ -93,12 +93,12 @@ public class AuthService {
     }
 
     public JwtResponse setupMpin(MpinSetupRequest request) {
-//        User user = userRepository.findByMobile(request.getDeviceId())
-//                .orElseThrow(() -> new RuntimeException("Error: User not found!!!!!!"));
+       User user = userRepository.findByMobile(request.getDeviceId())
+                .orElseThrow(() -> new RuntimeException("Error: User not found!!!!!!"));
 
-        // if (!user.isVerified()) {
-        // throw new RuntimeException("Error: User not verified!");
-        // }
+//         if (!user.isVerified()) {
+//         throw new RuntimeException("Error: User not verified!");
+//         }
 
         user.setMpin(encoder.encode(request.getMpin()));
         userRepository.save(user);
