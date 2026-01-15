@@ -21,8 +21,8 @@ public class UserDevice {
     @JoinColumn(name = "user_id", nullable = false)
     private User usr;
 
-    @Column(unique = true)
-    private String device_id;
+    @Column(name = "device_id", nullable = false, unique = true)
+    private String deviceId;
     private Date createdAt;
     private Date updatedAt;
     private String status;

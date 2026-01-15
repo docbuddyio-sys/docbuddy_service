@@ -30,7 +30,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String authHeader = request.getHeader("Authorization");
-            System.out.println("----------->"+authHeader);
+            // System.out.println("----------->"+authHeader);
             // 2. Check if the header is present and starts with "Bearer "
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 // 3. Extract the actual token (skip the first 7 characters: "Bearer ")

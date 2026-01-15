@@ -4,6 +4,7 @@ import com.example.lifevault.entity.Otp;
 import com.example.lifevault.entity.User;
 import com.example.lifevault.payload.*;
 import com.example.lifevault.repository.OtpRepository;
+import com.example.lifevault.repository.UserDeviceRepository;
 import com.example.lifevault.repository.UserRepository;
 import com.example.lifevault.security.JwtUtils;
 import com.example.lifevault.security.UserDetailsImpl;
@@ -26,6 +27,9 @@ public class AuthService {
 
     @Autowired
     OtpRepository otpRepository;
+
+    @Autowired
+    UserDeviceRepository userDeviceRepository;
 
     @Autowired
     PasswordEncoder encoder;
@@ -92,20 +96,39 @@ public class AuthService {
         return new MessageResponse("OTP Verified Successfully!");
     }
 
-    public JwtResponse setupMpin(MpinSetupRequest request) {
-       User user = userRepository.findByMobile(request.getDeviceId())
-                .orElseThrow(() -> new RuntimeException("Error: User not found!!!!!!"));
+    public JwtResponse setupMpin(MpinSetupRequest request, String jwtToken) {
+        // Extract user email from JWT token
+        String email = jwtUtils.getUserNameFromJwtToken(jwtToken);
 
-//         if (!user.isVerified()) {
-//         throw new RuntimeException("Error: User not verified!");
-//         }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Error: User not found!"));
 
-        user.setMpin(encoder.encode(request.getMpin()));
-        userRepository.save(user);
+        // Set MPIN only if not already set (one MPIN per user)
+        if (user.getMpin() == null || user.getMpin().isEmpty()) {
+            user.setMpin(encoder.encode(request.getMpin()));
+            userRepository.save(user);
+        }
 
-        // Auto login
-        return login(new LoginRequest(request.getDeviceId(), request.getMpin())); // Reusing login logic logic slightly
-                                                                                // modified
+        // Register the device if not already registered
+        if (!userDeviceRepository.existsByUsrAndDeviceId(user, request.getDeviceId())) {
+            com.example.lifevault.entity.UserDevice userDevice = new com.example.lifevault.entity.UserDevice();
+            userDevice.setUsr(user);
+            userDevice.setDeviceId(request.getDeviceId());
+            userDevice.setCreatedAt(new java.util.Date());
+            userDevice.setUpdatedAt(new java.util.Date());
+            userDevice.setStatus("ACTIVE");
+            userDeviceRepository.save(userDevice);
+        }
+
+        // Generate JWT token for immediate login
+        String jwt = jwtUtils.generateJwtTokenFromUsername(user.getEmail());
+
+        return new JwtResponse(jwt,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getMobile(),
+                user.getRoles());
     }
 
     public JwtResponse login(LoginRequest request) {
@@ -138,7 +161,28 @@ public class AuthService {
         String jwt = jwtUtils.generateJwtTokenFromUsername(user.getEmail());
         userRepository.save(user);
 
+        return new JwtResponse(jwt,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getMobile(),
+                user.getRoles());
+    }
 
+    public JwtResponse mpinLogin(MpinLoginRequest request) {
+        // Find device by device ID
+        com.example.lifevault.entity.UserDevice userDevice = userDeviceRepository.findByDeviceId(request.getDeviceId())
+                .orElseThrow(() -> new RuntimeException("Error: Device not registered!"));
+
+        User user = userDevice.getUsr();
+
+        // Validate MPIN
+        if (user.getMpin() == null || !encoder.matches(request.getMpin(), user.getMpin())) {
+            throw new RuntimeException("Error: Invalid MPIN!");
+        }
+
+        // Generate JWT token
+        String jwt = jwtUtils.generateJwtTokenFromUsername(user.getEmail());
 
         return new JwtResponse(jwt,
                 user.getId(),

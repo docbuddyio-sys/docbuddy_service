@@ -1,21 +1,17 @@
 package com.example.lifevault.controller;
 
-import com.example.lifevault.entity.User;
-import com.example.lifevault.exception.UnauthorizedException;
-import com.example.lifevault.repository.UserRepository;
-import com.example.lifevault.service.UserService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 import com.example.lifevault.payload.*;
 import com.example.lifevault.service.AuthService;
 import com.example.lifevault.service.GoogleAuthService;
+import com.example.lifevault.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -53,16 +49,16 @@ public class AuthController {
         }
 
         try {
-           // System.out.println("Full Payload: " + payload.toPrettyString());
+            // System.out.println("Full Payload: " + payload.toPrettyString());
 
             // Extract user information
             String email = payload.getEmail();
             String name = (String) payload.get("name");
             String googleUserId = payload.getSubject();
-//
-//            System.out.println("Email: " + email);
-//            System.out.println("Name: " + name);
-//            System.out.println("Google User ID: " + googleUserId);
+            //
+            // System.out.println("Email: " + email);
+            // System.out.println("Name: " + name);
+            // System.out.println("Google User ID: " + googleUserId);
 
             if (email == null) {
                 return ResponseEntity.status(400).body(Map.of("message",
@@ -74,9 +70,9 @@ public class AuthController {
             // - Look up user by email or googleUserId.
             // - If user doesn't exist, register them (Sign-up).
             // - If user exists, log them in (Sign-in).
-//            if (userRepository.existsByEmail(email)) {
-//                throw new Exception("hello ");
-//            }
+            // if (userRepository.existsByEmail(email)) {
+            // throw new Exception("hello ");
+            // }
 
             // 2. GENERATE YOUR APPLICATION'S JWT
             // This custom token is what your app will use for subsequent API calls.
@@ -95,28 +91,38 @@ public class AuthController {
     }
 
     @PostMapping("/setup-mpin")
-    public ResponseEntity<?> setupMpin(@Valid @RequestBody MpinSetupRequest mpinSetupRequest) {
-        return ResponseEntity.ok(authService.setupMpin(mpinSetupRequest));
+    public ResponseEntity<?> setupMpin(
+            @Valid @RequestBody MpinSetupRequest mpinSetupRequest,
+            @RequestHeader("Authorization") String authHeader) {
+
+        // Extract JWT token from Authorization header (format: "Bearer <token>")
+        String jwtToken = authHeader.substring(7);
+
+        return ResponseEntity.ok(authService.setupMpin(mpinSetupRequest, jwtToken));
     }
 
     @PostMapping("/mpin-login")
+    public ResponseEntity<?> mpinLogin(@Valid @RequestBody MpinLoginRequest mpinLoginRequest) {
+        return ResponseEntity.ok(authService.mpinLogin(mpinLoginRequest));
+    }
+
+    @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @PostMapping("/g-login")
-    public ResponseEntity<Map<String,String>> googleLogin(@Valid @RequestBody IdTokenRequest request ){
+    public ResponseEntity<Map<String, String>> googleLogin(@Valid @RequestBody IdTokenRequest request) {
         Payload payload = googleAuthService.verifyToken(request.idToken);
 
         if (payload == null) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid Google ID Token."));
         }
 
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String googleUserId = payload.getSubject();
-            return  ResponseEntity.ok(userService.googleLoginService(email));
-
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String googleUserId = payload.getSubject();
+        return ResponseEntity.ok(userService.googleLoginService(email));
 
     }
 
