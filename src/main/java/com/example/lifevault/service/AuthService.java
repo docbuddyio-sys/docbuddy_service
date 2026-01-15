@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -51,8 +50,8 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setMobile(request.getMobile());
-        user.setRoles("ROLE_USER");
-        user.setVerified(false);
+        user.setRoles("USER");
+        // user.setVerified(false);
 
         userRepository.save(user);
 
@@ -84,7 +83,7 @@ public class AuthService {
         // Verify User
         User user = userRepository.findByMobile(request.getMobile())
                 .orElseThrow(() -> new RuntimeException("Error: User not found!"));
-        user.setVerified(true);
+        // user.setVerified(true);
         userRepository.save(user);
 
         // Delete OTP after successful verification
@@ -94,18 +93,18 @@ public class AuthService {
     }
 
     public JwtResponse setupMpin(MpinSetupRequest request) {
-        User user = userRepository.findByMobile(request.getMobile())
-                .orElseThrow(() -> new RuntimeException("Error: User not found!"));
+//        User user = userRepository.findByMobile(request.getDeviceId())
+//                .orElseThrow(() -> new RuntimeException("Error: User not found!!!!!!"));
 
-        if (!user.isVerified()) {
-            throw new RuntimeException("Error: User not verified!");
-        }
+        // if (!user.isVerified()) {
+        // throw new RuntimeException("Error: User not verified!");
+        // }
 
         user.setMpin(encoder.encode(request.getMpin()));
         userRepository.save(user);
 
         // Auto login
-        return login(new LoginRequest(request.getMobile(), request.getMpin())); // Reusing login logic logic slightly
+        return login(new LoginRequest(request.getDeviceId(), request.getMpin())); // Reusing login logic logic slightly
                                                                                 // modified
     }
 
@@ -118,6 +117,28 @@ public class AuthService {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User user = userRepository.findById(userDetails.getId()).orElseThrow();
+
+        return new JwtResponse(jwt,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getMobile(),
+                user.getRoles());
+    }
+
+    public Object signupGuser(String email, String name, String googleId) {
+        if (userRepository.existsByEmail(email)) {
+            return new MessageResponse("Error: Email is already in use!");
+        }
+
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setRoles("USER");
+        String jwt = jwtUtils.generateJwtTokenFromUsername(user.getEmail());
+        userRepository.save(user);
+
+
 
         return new JwtResponse(jwt,
                 user.getId(),

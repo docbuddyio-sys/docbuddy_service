@@ -66,7 +66,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
-        return mobile;
+        return mobile != null ? mobile : email;
     }
 
     @Override

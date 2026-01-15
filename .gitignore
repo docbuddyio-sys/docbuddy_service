@@ -34,3 +34,44 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Compiled files
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE specific files
+.idea/
+*.iml
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Application secrets
+application-*.properties
+application-*.yml
+!application.properties.example
+.env
+
+# Sensitive data
+**/secrets/
+*.pem
+*.key
+*.p12
+
+# Build files
+build/
+bin/
+out/

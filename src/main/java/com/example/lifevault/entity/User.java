@@ -5,6 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -20,12 +24,17 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String mobile;
 
     private String mpin; // Hashed MPIN
-
-    private boolean isVerified = false;
-
+    private String access_token;
     private String roles; // Comma separated roles, e.g., "ROLE_USER"
+    private Date createdAt;
+    private Date updatedAt;
+    private String status;
+
+    @OneToMany(mappedBy = "usr", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserDevice> user_devices = new ArrayList<>();
+
 }

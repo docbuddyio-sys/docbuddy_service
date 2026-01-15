@@ -29,6 +29,18 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            String authHeader = request.getHeader("Authorization");
+            System.out.println("----------->"+authHeader);
+            // 2. Check if the header is present and starts with "Bearer "
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                // 3. Extract the actual token (skip the first 7 characters: "Bearer ")
+                String token = authHeader.substring(7);
+
+                // Log or validate the token here
+                System.out.println("Extracted Token: " + token);
+
+                // Your validation logic (e.g., jwtUtils.validateToken(token))
+            }
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);

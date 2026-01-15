@@ -11,6 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Component
 public class JwtUtils {
@@ -34,8 +37,12 @@ public class JwtUtils {
     }
 
     public String generateJwtTokenFromMobile(String mobile) {
+        return generateJwtTokenFromUsername(mobile);
+    }
+
+    public String generateJwtTokenFromUsername(String username) {
         return Jwts.builder()
-                .setSubject(mobile)
+                .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)
@@ -43,7 +50,12 @@ public class JwtUtils {
     }
 
     private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        try {
+            return Keys.hmacShaKeyFor(
+                    MessageDigest.getInstance("SHA-256").digest(jwtSecret.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not found", e);
+        }
     }
 
     public String getUserNameFromJwtToken(String token) {
