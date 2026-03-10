@@ -1,0 +1,55 @@
+name: Deploy to Cloud Run
+
+on:
+    push:
+        branches:
+            - main
+
+env:
+    PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+    REGION: us-central1
+    REPO_NAME: lifevault-repo
+    IMAGE_NAME: lifevault-app
+    SERVICE_NAME: lifevault-service
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: "read"
+            id-token: "write" # Required for Workload Identity Federation
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # Removed the local Maven build step. Docker handles it now!
+
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+                  service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+            - name: Configure Docker for Artifact Registry
+              run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+            - name: Build and Push Docker Image
+              run: |
+                  IMAGE_TAG=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+                  docker build -t $IMAGE_TAG .
+                  docker push $IMAGE_TAG
+
+            - name: Deploy to Cloud Run
+              uses: google-github-actions/deploy-cloudrun@v2
+              with:
+                  service: ${{ env.SERVICE_NAME }}
+                  region: ${{ env.REGION }}
+                  image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+                  env_vars: |
+                      SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}
+                      SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }}
+                      SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+                      JWT_SECRET=${{ secrets.JWT_SECRET }}
+                      GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+                  flags: "--allow-unauthenticated"
