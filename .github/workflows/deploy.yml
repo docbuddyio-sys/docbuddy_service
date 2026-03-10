@@ -27,13 +27,19 @@ jobs:
             # Removed the local Maven build step. Docker handles it now!
 
             - name: Authenticate to Google Cloud
+              id: auth # <--- Added an ID to reference this step
               uses: google-github-actions/auth@v2
               with:
+                  token_format: "access_token" # <--- THIS IS THE MAGIC KEY
                   workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
                   service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-            - name: Configure Docker for Artifact Registry
-              run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+            - name: Docker Auth
+              uses: docker/login-action@v3
+              with:
+                  username: "oauth2accesstoken"
+                  password: "${{ steps.auth.outputs.access_token }}"
+                  registry: "${{ env.REGION }}-docker.pkg.dev"
 
             - name: Build and Push Docker Image
               run: |
