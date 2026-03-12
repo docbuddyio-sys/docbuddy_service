@@ -2,18 +2,16 @@ package com.example.lifevault.utils;
 
 import java.time.LocalDateTime;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
-    private boolean success;
+    private Boolean success;
     private String message;
     private T data;
     private Object errors;

@@ -42,11 +42,11 @@ public class AuthService {
 
     public MessageResponse signup(SignupRequest request) {
         if (userRepository.existsByMobile(request.getMobile())) {
-            return new MessageResponse("Error: Mobile is already taken!");
+            throw new RuntimeException("Error: Mobile is already taken!");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new MessageResponse("Error: Email is already in use!");
+            throw new RuntimeException("Error: Email is already in use!");
         }
 
         // Create user but not verified yet
@@ -77,11 +77,11 @@ public class AuthService {
 
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
             otpRepository.delete(otp);
-            return new MessageResponse("Error: OTP expired!");
+            throw new RuntimeException("Error: OTP expired!");
         }
 
         if (!otp.getOtpCode().equals(request.getOtp())) {
-            return new MessageResponse("Error: Invalid OTP!");
+            throw new RuntimeException("Error: Invalid OTP!");
         }
 
         // Verify User
@@ -151,7 +151,7 @@ public class AuthService {
 
     public Object signupGuser(String email, String name, String googleId) {
         if (userRepository.existsByEmail(email)) {
-            return new MessageResponse("Error: Email is already in use!");
+            throw new RuntimeException("Error: Email is already in use!");
         }
 
         User user = new User();

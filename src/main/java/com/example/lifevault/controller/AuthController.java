@@ -6,6 +6,8 @@ import com.example.lifevault.payload.*;
 import com.example.lifevault.service.AuthService;
 import com.example.lifevault.service.GoogleAuthService;
 import com.example.lifevault.service.UserService;
+import com.example.lifevault.utils.ApiResponse;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +39,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        return ResponseEntity.ok(authService.signup(signUpRequest));
+        return ResponseEntity.ok(ApiResponse.success(authService.signup(signUpRequest)));
     }
 
     @PostMapping("/google-signup")
