@@ -7,49 +7,35 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import com.example.lifevault.utils.ApiResponse;
+
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", false);
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.UNAUTHORIZED.value());
-
-        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<ApiResponse<Object>> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
+        return new ResponseEntity<>(ApiResponse.error(ex.getMessage(), null), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Object> handleConflictException(ConflictException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", false);
-        body.put("message", ex.getMessage());
-        body.put("status", HttpStatus.CONFLICT.value());
-
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    public ResponseEntity<ApiResponse<Object>> handleConflictException(ConflictException ex, WebRequest request) {
+        return new ResponseEntity<>(ApiResponse.error(ex.getMessage(), null), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGlobalException(Exception ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", false);
-        body.put("message", "An unexpected error occurred");
-        body.put("error", ex.getMessage());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Object>> handleGlobalException(Exception ex, WebRequest request) {
+        return new ResponseEntity<>(ApiResponse.error("An unexpected error occurred", ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errors.put(error.getField(), error.getDefaultMessage()));
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("Validation failed", errors));
     }
 }
